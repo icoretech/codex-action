@@ -1,0 +1,66 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # Validation-only tests — no API key or docker needed
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: "Test: fails without auth"
+        id: no-auth
+        uses: ./
+        with:
+          prompt: "test"
+        continue-on-error: true
+
+      - name: Verify no-auth failure
+        run: |
+          if [ "${{ steps.no-auth.outcome }}" != "failure" ]; then
+            echo "Expected failure when no auth provided"
+            exit 1
+          fi
+
+      - name: "Test: fails with empty prompt"
+        id: empty-prompt
+        uses: ./
+        with:
+          prompt: ""
+          openai_api_key: "sk-fake"
+        continue-on-error: true
+
+      - name: Verify empty-prompt failure
+        run: |
+          if [ "${{ steps.empty-prompt.outcome }}" != "failure" ]; then
+            echo "Expected failure when prompt is empty"
+            exit 1
+          fi
+
+  # Full integration — requires OPENAI_API_KEY secret
+  full:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run Codex with API key
+        id: codex
+        uses: ./
+        with:
+          prompt: "Reply with exactly: hello from codex-action"
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          timeout: "60"
+
+      - name: Verify output is non-empty
+        run: |
+          RESULT="${{ steps.codex.outputs.result }}"
+          if [ -z "${RESULT}" ]; then
+            echo "Expected non-empty result"
+            exit 1
+          fi
+          echo "Got result: ${RESULT}"

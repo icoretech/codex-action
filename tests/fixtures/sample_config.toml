@@ -1,0 +1,3 @@
+[auth]
+api_key = "sk-fake-key-for-testing"
+cli_auth_credentials_store = "file"

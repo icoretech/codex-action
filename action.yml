@@ -1,0 +1,57 @@
+name: 'Codex Action'
+description: 'Run OpenAI Codex CLI non-interactively in GitHub Actions workflows'
+author: 'iCoreTech, Inc.'
+
+branding:
+  icon: 'terminal'
+  color: 'green'
+
+inputs:
+  prompt:
+    description: 'Instructions for Codex (e.g., "Summarize these changes for operators")'
+    required: true
+  input_text:
+    description: 'Data to process (e.g., changelog content). Appended after the prompt with a separator.'
+    required: false
+    default: ''
+  openai_api_key:
+    description: 'OpenAI API key. Mutually exclusive with codex_config.'
+    required: false
+    default: ''
+  codex_config:
+    description: 'Base64-encoded config.toml from a prior device-auth session. Mutually exclusive with openai_api_key.'
+    required: false
+    default: ''
+  image_version:
+    description: 'codex-docker image version tag'
+    required: false
+    default: '0.112.0'
+  model:
+    description: 'Model override (passed to codex exec --model)'
+    required: false
+    default: ''
+  timeout:
+    description: 'Max seconds for codex execution (default: 300)'
+    required: false
+    default: '300'
+
+outputs:
+  result:
+    description: 'Text output from Codex'
+    value: ${{ steps.codex.outputs.result }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Codex
+      id: codex
+      shell: bash
+      env:
+        INPUT_PROMPT: ${{ inputs.prompt }}
+        INPUT_INPUT_TEXT: ${{ inputs.input_text }}
+        INPUT_OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        INPUT_CODEX_CONFIG: ${{ inputs.codex_config }}
+        INPUT_IMAGE_VERSION: ${{ inputs.image_version }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}
+      run: ${{ github.action_path }}/entrypoint.sh
