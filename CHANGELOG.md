@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/icoretech/codex-action/compare/v0.3.0...v0.4.0) (2026-03-16)
+
+
+### Features
+
+* auto-configure git safe.directory, add issue triage recipe ([a3eba5a](https://github.com/icoretech/codex-action/commit/a3eba5a82523ec682eb6ac9473df196714adf242))
+
 ## [0.3.0](https://github.com/icoretech/codex-action/compare/v0.2.1...v0.3.0) (2026-03-16)
 
 
