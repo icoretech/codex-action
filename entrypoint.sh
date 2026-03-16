@@ -11,10 +11,12 @@ die() {
 cleanup() {
   # auth_dir may contain files owned by the container user (uid 1000);
   # chmod before removal so the runner user can delete them.
-  if [[ -d "${auth_dir:-}" ]]; then
-    chmod -R 777 "${auth_dir}" 2>/dev/null || true
-  fi
-  rm -rf "${auth_dir:-}" "${prompt_file:-}" "${output_file:-}"
+  for dir in "${auth_dir:-}" "${output_dir:-}"; do
+    if [[ -d "${dir}" ]]; then
+      chmod -R 777 "${dir}" 2>/dev/null || true
+    fi
+  done
+  rm -rf "${auth_dir:-}" "${output_dir:-}" "${prompt_file:-}"
 }
 trap cleanup EXIT
 
@@ -110,18 +112,19 @@ fi
 
 # --- Run codex ---
 
-output_file=$(mktemp)
-chmod 666 "${output_file}"
+output_dir=$(mktemp -d)
+chmod 777 "${output_dir}"
+output_file="${output_dir}/result.txt"
 
 cmd=(docker run --rm -i
   -e CODEX_HOME=/home/codex/.codex
   -v "${auth_dir}:/home/codex/.codex"
   -v "${GITHUB_WORKSPACE}:/workspace"
-  -v "${output_file}:/tmp/codex_output"
+  -v "${output_dir}:/tmp/codex_out"
   "${image}"
   exec --ephemeral --skip-git-repo-check
   --full-auto -C /workspace
-  -o /tmp/codex_output)
+  -o /tmp/codex_out/result.txt)
 
 [[ -n "${model}" ]] && cmd+=(--model "${model}")
 

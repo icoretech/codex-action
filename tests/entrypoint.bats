@@ -185,7 +185,7 @@ teardown() {
 @test "exec uses -o flag for output capture" {
   run bash entrypoint.sh
   [ "$status" -eq 0 ]
-  [[ "$(docker_call 1)" == *"-o /tmp/codex_output"* ]]
+  [[ "$(docker_call 1)" == *"-o /tmp/codex_out/result.txt"* ]]
 }
 
 @test "exec reads prompt from stdin via dash argument" {

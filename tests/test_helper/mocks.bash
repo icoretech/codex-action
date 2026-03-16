@@ -23,19 +23,19 @@ docker() {
   fi
 
   if [[ -f "${DOCKER_MOCK_OUTPUT:-/dev/null}" ]] && [[ "${exit_code}" -eq 0 ]]; then
-    # Detect the -v mount for /tmp/codex_output and write mock output there
-    # instead of stdout, simulating the -o flag behavior inside the container.
-    local host_output=""
+    # Detect the -v mount for /tmp/codex_out and write mock output to the
+    # result file, simulating the -o flag behavior inside the container.
+    local host_output_dir=""
     local args=("$@")
     for ((i=0; i<${#args[@]}; i++)); do
-      if [[ "${args[$i]}" == -v ]] && [[ "${args[$((i+1))]:-}" == *":/tmp/codex_output"* ]]; then
-        host_output="${args[$((i+1))]%%:*}"
+      if [[ "${args[$i]}" == -v ]] && [[ "${args[$((i+1))]:-}" == *":/tmp/codex_out"* ]]; then
+        host_output_dir="${args[$((i+1))]%%:*}"
         break
       fi
     done
 
-    if [[ -n "${host_output}" ]]; then
-      cat "${DOCKER_MOCK_OUTPUT}" > "${host_output}"
+    if [[ -n "${host_output_dir}" ]]; then
+      cat "${DOCKER_MOCK_OUTPUT}" > "${host_output_dir}/result.txt"
     else
       cat "${DOCKER_MOCK_OUTPUT}"
     fi
