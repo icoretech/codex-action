@@ -19,7 +19,7 @@ inputs:
     required: false
     default: ''
   codex_config:
-    description: 'Base64-encoded config.toml from a prior device-auth session. Mutually exclusive with openai_api_key.'
+    description: 'Base64-encoded auth.json from a prior device-auth session. Mutually exclusive with openai_api_key.'
     required: false
     default: ''
   image_version:

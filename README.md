@@ -42,7 +42,7 @@ You must provide exactly one of `openai_api_key` or `codex_config`. Providing bo
 
 ### Option B: OAuth / Device Auth (`codex_config`)
 
-Authenticate once via device auth and store the resulting config as a secret. This uses your existing Codex account.
+Authenticate once via device auth and store the resulting credentials as a secret. This uses your existing Codex account.
 
 1. Pull the codex-docker image:
 
@@ -62,14 +62,14 @@ Authenticate once via device auth and store the resulting config as a secret. Th
 
 3. Follow the browser prompt to complete authentication.
 
-4. Encode the resulting config file:
+4. Encode the resulting credentials file:
 
    ```bash
    # Linux
-   base64 -w0 .codex/config.toml
+   base64 -w0 .codex/auth.json
 
    # macOS
-   base64 -i .codex/config.toml
+   base64 -i .codex/auth.json
    ```
 
 5. Store the output as a repository secret named `CODEX_CONFIG_B64`:
@@ -101,7 +101,7 @@ Authenticate once via device auth and store the resulting config as a secret. Th
 | `prompt` | Yes | — | Instructions for Codex (e.g., `"Summarize these changes for operators"`). |
 | `input_text` | No | `""` | Data to process (e.g., changelog content). Appended after the prompt with a `---` separator when provided. |
 | `openai_api_key` | No | `""` | OpenAI API key. Mutually exclusive with `codex_config`. |
-| `codex_config` | No | `""` | Base64-encoded `config.toml` from a prior device-auth session. Mutually exclusive with `openai_api_key`. |
+| `codex_config` | No | `""` | Base64-encoded `auth.json` from a prior device-auth session. Mutually exclusive with `openai_api_key`. |
 | `image_version` | No | `0.114.0` | codex-docker image version tag used for the container. |
 | `model` | No | `""` | Model override passed to `codex exec --model`. When omitted, the model configured in your Codex config is used. |
 | `reasoning_effort` | No | `""` | Reasoning effort level (`minimal`, `low`, `medium`, `high`, `xhigh`). Passed as `model_reasoning_effort` config override. |
@@ -350,7 +350,7 @@ jobs:
 **Fixes:**
 
 - **API key auth:** Verify the secret `OPENAI_API_KEY` is set correctly in your repository and that the key is active at [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
-- **Config auth:** The OAuth token embedded in `config.toml` may have expired. Re-run the device-auth flow, re-encode the file, and update the `CODEX_CONFIG_B64` secret.
+- **Config auth:** The OAuth token embedded in `auth.json` may have expired. Re-run the device-auth flow, re-encode the file, and update the `CODEX_CONFIG_B64` secret.
 
 ---
 

@@ -99,8 +99,8 @@ if [[ -n "${openai_api_key}" ]]; then
     "${image}" \
     codex-bootstrap api-key-login
 elif [[ -n "${codex_config}" ]]; then
-  # Config auth: decode and write config.toml
-  echo "${codex_config}" | b64decode > "${auth_dir}/config.toml"
+  # Config auth: decode and write auth.json
+  echo "${codex_config}" | b64decode > "${auth_dir}/auth.json"
 fi
 
 # --- Build prompt ---

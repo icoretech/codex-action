@@ -74,7 +74,7 @@ teardown() {
 @test "config auth: decodes base64 and runs single exec" {
   export INPUT_OPENAI_API_KEY=""
   local config_content
-  config_content=$(cat tests/fixtures/sample_config.toml)
+  config_content=$(cat tests/fixtures/sample_auth.json)
   export INPUT_CODEX_CONFIG
   INPUT_CODEX_CONFIG=$(echo "${config_content}" | base64)
 
