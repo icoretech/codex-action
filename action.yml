@@ -31,7 +31,7 @@ inputs:
     required: false
     default: ''
   reasoning_effort:
-    description: 'Reasoning effort level (e.g., low, medium, high). Passed via codex config override.'
+    description: 'Reasoning effort level (minimal, low, medium, high, xhigh). Passed via model_reasoning_effort config override.'
     required: false
     default: ''
   timeout:

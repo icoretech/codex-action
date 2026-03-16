@@ -129,7 +129,7 @@ cmd=(docker run --rm -i
   -o /tmp/codex_out/result.txt)
 
 [[ -n "${model}" ]] && cmd+=(--model "${model}")
-[[ -n "${reasoning_effort}" ]] && cmd+=(-c "reasoning_effort=\"${reasoning_effort}\"")
+[[ -n "${reasoning_effort}" ]] && cmd+=(-c "model_reasoning_effort=\"${reasoning_effort}\"")
 
 # Pipe prompt via stdin ("-" reads prompt from stdin).
 # Stderr passes through to workflow logs.

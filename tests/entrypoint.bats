@@ -187,7 +187,7 @@ teardown() {
   export INPUT_REASONING_EFFORT="low"
   run bash entrypoint.sh
   [ "$status" -eq 0 ]
-  [[ "$(docker_call 1)" == *'-c reasoning_effort="low"'* ]]
+  [[ "$(docker_call 1)" == *'-c model_reasoning_effort="low"'* ]]
 }
 
 @test "reasoning effort: omitted when empty" {
