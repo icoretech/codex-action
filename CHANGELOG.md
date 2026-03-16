@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/icoretech/codex-action/compare/v0.2.0...v0.2.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* replace useless cat with input redirection (SC2002) ([5b7a20a](https://github.com/icoretech/codex-action/commit/5b7a20a3ca097e40fe7735c025f204db1442f386))
+
 ## [0.2.0](https://github.com/icoretech/codex-action/compare/v0.1.0...v0.2.0) (2026-03-16)
 
 
