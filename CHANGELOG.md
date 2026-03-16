@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/icoretech/codex-action/compare/v0.4.0...v0.5.0) (2026-03-16)
+
+
+### Features
+
+* add network_access input to control network policy ([5dc4f26](https://github.com/icoretech/codex-action/commit/5dc4f2655b7b7f9f40acbf4887a0db8e5b4ea89d))
+
 ## [0.4.0](https://github.com/icoretech/codex-action/compare/v0.3.0...v0.4.0) (2026-03-16)
 
 
