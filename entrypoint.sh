@@ -50,6 +50,7 @@ openai_api_key="${INPUT_OPENAI_API_KEY:-}"
 codex_config="${INPUT_CODEX_CONFIG:-}"
 image_version="${INPUT_IMAGE_VERSION:-0.112.0}"
 model="${INPUT_MODEL:-}"
+reasoning_effort="${INPUT_REASONING_EFFORT:-}"
 timeout_seconds="${INPUT_TIMEOUT:-300}"
 
 image="ghcr.io/icoretech/codex-docker:${image_version}"
@@ -128,6 +129,7 @@ cmd=(docker run --rm -i
   -o /tmp/codex_out/result.txt)
 
 [[ -n "${model}" ]] && cmd+=(--model "${model}")
+[[ -n "${reasoning_effort}" ]] && cmd+=(-c "reasoning_effort=\"${reasoning_effort}\"")
 
 # Pipe prompt via stdin ("-" reads prompt from stdin).
 # Stderr passes through to workflow logs.

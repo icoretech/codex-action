@@ -104,6 +104,7 @@ Authenticate once via device auth and store the resulting config as a secret. Th
 | `codex_config` | No | `""` | Base64-encoded `config.toml` from a prior device-auth session. Mutually exclusive with `openai_api_key`. |
 | `image_version` | No | `0.112.0` | codex-docker image version tag used for the container. |
 | `model` | No | `""` | Model override passed to `codex exec --model`. When omitted, the model configured in your Codex config is used. |
+| `reasoning_effort` | No | `""` | Reasoning effort level (e.g., `low`, `medium`, `high`). Passed as a codex config override. |
 | `timeout` | No | `300` | Maximum seconds allowed for Codex execution before the step is killed. |
 
 ---

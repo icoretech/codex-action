@@ -11,6 +11,7 @@ setup() {
   export INPUT_CODEX_CONFIG=""
   export INPUT_IMAGE_VERSION="0.112.0"
   export INPUT_MODEL=""
+  export INPUT_REASONING_EFFORT=""
   export INPUT_TIMEOUT="300"
 
   # Set mock docker to return some output
@@ -178,6 +179,22 @@ teardown() {
   run bash entrypoint.sh
   [ "$status" -eq 0 ]
   [[ "$output" == *"::add-mask::${INPUT_CODEX_CONFIG}"* ]]
+}
+
+# --- Reasoning Effort Tests ---
+
+@test "reasoning effort: passed when set" {
+  export INPUT_REASONING_EFFORT="low"
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [[ "$(docker_call 1)" == *'-c reasoning_effort="low"'* ]]
+}
+
+@test "reasoning effort: omitted when empty" {
+  export INPUT_REASONING_EFFORT=""
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [[ "$(docker_call 1)" != *"reasoning_effort"* ]]
 }
 
 # --- Output Flag Tests ---

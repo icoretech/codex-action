@@ -30,6 +30,10 @@ inputs:
     description: 'Model override (passed to codex exec --model)'
     required: false
     default: ''
+  reasoning_effort:
+    description: 'Reasoning effort level (e.g., low, medium, high). Passed via codex config override.'
+    required: false
+    default: ''
   timeout:
     description: 'Max seconds for codex execution (default: 300)'
     required: false
@@ -53,5 +57,6 @@ runs:
         INPUT_CODEX_CONFIG: ${{ inputs.codex_config }}
         INPUT_IMAGE_VERSION: ${{ inputs.image_version }}
         INPUT_MODEL: ${{ inputs.model }}
+        INPUT_REASONING_EFFORT: ${{ inputs.reasoning_effort }}
         INPUT_TIMEOUT: ${{ inputs.timeout }}
       run: ${{ github.action_path }}/entrypoint.sh
