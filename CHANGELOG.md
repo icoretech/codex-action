@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/icoretech/codex-action/compare/v0.5.0...v0.6.0) (2026-03-16)
+
+
+### Features
+
+* add quiet mode to suppress verbose output from workflow logs ([1e629dd](https://github.com/icoretech/codex-action/commit/1e629ddaf9f57d0a6919d5fd7b318d95b0f995c8))
+
 ## [0.5.0](https://github.com/icoretech/codex-action/compare/v0.4.0...v0.5.0) (2026-03-16)
 
 
