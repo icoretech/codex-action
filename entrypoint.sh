@@ -79,6 +79,7 @@ fi
 # --- Setup auth ---
 
 auth_dir=$(mktemp -d)
+chmod 777 "${auth_dir}"
 
 if [[ -n "${openai_api_key}" ]]; then
   # API key auth: run codex-bootstrap to write credentials
