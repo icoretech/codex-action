@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/icoretech/codex-action/compare/v0.2.1...v0.3.0) (2026-03-16)
+
+
+### Features
+
+* add codex_config_toml input for custom Codex preferences ([b6c8582](https://github.com/icoretech/codex-action/commit/b6c8582071c791d036ac2eedb2dcfcb27ef5b841))
+
+
+### Bug Fixes
+
+* write codex_config credentials to auth.json instead of config.toml ([d54880a](https://github.com/icoretech/codex-action/commit/d54880a0da5ad43ee72384d70afd4bc3feb76aec))
+
 ## [0.2.1](https://github.com/icoretech/codex-action/compare/v0.2.0...v0.2.1) (2026-03-16)
 
 
