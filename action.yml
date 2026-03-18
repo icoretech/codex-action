@@ -42,6 +42,10 @@ inputs:
     description: 'Allow Codex to make network requests (curl, wget, etc.) during execution. When false (default), a prompt-level policy instructs the model not to use networking tools.'
     required: false
     default: 'false'
+  sandbox:
+    description: 'Sandbox mode for Codex execution. Options: full-auto (default, uses bubblewrap), danger-full-access (disables sandbox — recommended for CI/Docker where the container is already isolated).'
+    required: false
+    default: 'full-auto'
   quiet:
     description: 'Suppress verbose Codex output (tool calls, grep results, file reads) from workflow logs. Prevents source code leakage in logs. Set to false for debugging.'
     required: false
@@ -72,6 +76,7 @@ runs:
         INPUT_MODEL: ${{ inputs.model }}
         INPUT_REASONING_EFFORT: ${{ inputs.reasoning_effort }}
         INPUT_NETWORK_ACCESS: ${{ inputs.network_access }}
+        INPUT_SANDBOX: ${{ inputs.sandbox }}
         INPUT_QUIET: ${{ inputs.quiet }}
         INPUT_TIMEOUT: ${{ inputs.timeout }}
       run: ${{ github.action_path }}/entrypoint.sh

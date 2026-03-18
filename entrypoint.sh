@@ -54,6 +54,7 @@ image_version="${INPUT_IMAGE_VERSION:-0.115.0}"
 model="${INPUT_MODEL:-}"
 reasoning_effort="${INPUT_REASONING_EFFORT:-}"
 network_access="${INPUT_NETWORK_ACCESS:-false}"
+sandbox="${INPUT_SANDBOX:-full-auto}"
 quiet="${INPUT_QUIET:-true}"
 timeout_seconds="${INPUT_TIMEOUT:-300}"
 
@@ -84,6 +85,11 @@ fi
 if [[ -z "${openai_api_key}" && -z "${codex_config}" ]]; then
   die "Exactly one of openai_api_key or codex_config must be provided, got neither"
 fi
+
+case "${sandbox}" in
+  full-auto|danger-full-access) ;;
+  *) die "sandbox must be 'full-auto' or 'danger-full-access', got '${sandbox}'" ;;
+esac
 
 # Validate base64 if codex_config is provided
 if [[ -n "${codex_config}" ]]; then
@@ -172,8 +178,15 @@ cmd+=(
   -v "${output_dir}:/tmp/codex_out"
   "${image}"
   exec --ephemeral --skip-git-repo-check
-  --full-auto -C /workspace
-  -o /tmp/codex_out/result.txt)
+  --full-auto)
+
+# Override the sandbox when the user requests danger-full-access (recommended for
+# CI/Docker where the container itself is already an isolation boundary).
+if [[ "${sandbox}" == "danger-full-access" ]]; then
+  cmd+=(--sandbox danger-full-access)
+fi
+
+cmd+=(-C /workspace -o /tmp/codex_out/result.txt)
 
 if [[ "${quiet}" == "true" ]]; then
   cmd+=(--json)

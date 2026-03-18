@@ -320,6 +320,34 @@ teardown() {
   [[ "${stdin_content}" == *"Some extra data"* ]]
 }
 
+# --- Sandbox Tests ---
+
+@test "sandbox: defaults to full-auto without --sandbox flag" {
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  local exec_call
+  exec_call=$(docker_call 1)
+  [[ "${exec_call}" == *"--full-auto"* ]]
+  [[ "${exec_call}" != *"--sandbox"* ]]
+}
+
+@test "sandbox: danger-full-access adds --sandbox flag" {
+  export INPUT_SANDBOX="danger-full-access"
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  local exec_call
+  exec_call=$(docker_call 1)
+  [[ "${exec_call}" == *"--full-auto"* ]]
+  [[ "${exec_call}" == *"--sandbox danger-full-access"* ]]
+}
+
+@test "sandbox: rejects invalid values" {
+  export INPUT_SANDBOX="yolo"
+  run bash entrypoint.sh
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"sandbox must be"* ]]
+}
+
 # --- Quiet Mode Tests ---
 
 @test "quiet mode: adds --json flag and RUST_LOG=off when enabled" {
