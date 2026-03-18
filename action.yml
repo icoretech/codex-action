@@ -29,7 +29,7 @@ inputs:
   image_version:
     description: 'codex-docker image version tag'
     required: false
-    default: '0.114.0'
+    default: '0.115.0'
   model:
     description: 'Model override (passed to codex exec --model)'
     required: false

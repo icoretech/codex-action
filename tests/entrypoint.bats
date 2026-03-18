@@ -10,7 +10,7 @@ setup() {
   export INPUT_OPENAI_API_KEY="sk-test-key-12345"
   export INPUT_CODEX_CONFIG=""
   export INPUT_CODEX_CONFIG_TOML=""
-  export INPUT_IMAGE_VERSION="0.114.0"
+  export INPUT_IMAGE_VERSION="0.115.0"
   export INPUT_MODEL=""
   export INPUT_REASONING_EFFORT=""
   export INPUT_NETWORK_ACCESS="true"
