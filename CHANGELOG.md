@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/icoretech/codex-action/compare/v0.6.0...v0.7.0) (2026-03-18)
+
+
+### Features
+
+* surface critical errors in quiet mode ([3da0eb2](https://github.com/icoretech/codex-action/commit/3da0eb2ad6afe5be122a19e9e143d3937d5b1f43))
+
 ## [0.6.0](https://github.com/icoretech/codex-action/compare/v0.5.0...v0.6.0) (2026-03-16)
 
 
