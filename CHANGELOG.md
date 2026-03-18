@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/icoretech/codex-action/compare/v0.8.0...v0.9.0) (2026-03-18)
+
+
+### Features
+
+* add sandbox input to control bubblewrap isolation ([d79e7fe](https://github.com/icoretech/codex-action/commit/d79e7fe44e37dff41aa1343f22708c37d7f0bbce))
+
 ## [0.8.0](https://github.com/icoretech/codex-action/compare/v0.7.0...v0.8.0) (2026-03-18)
 
 
