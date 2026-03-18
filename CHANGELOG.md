@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/icoretech/codex-action/compare/v0.7.0...v0.8.0) (2026-03-18)
+
+
+### Features
+
+* bump default codex-docker image to 0.115.0 ([e2d0da3](https://github.com/icoretech/codex-action/commit/e2d0da34f5e7bca2a51c2d5f42ec079ba9f42820))
+
 ## [0.7.0](https://github.com/icoretech/codex-action/compare/v0.6.0...v0.7.0) (2026-03-18)
 
 
