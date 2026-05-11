@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["github-actions", "custom.regex"],
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "platformAutomerge": false,
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+  "rebaseWhen": "conflicted",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^action\\.yml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+default: '(?<currentValue>[^']+)'"
+      ],
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^entrypoint\\.sh$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+image_version=\"\\$\\{INPUT_IMAGE_VERSION:-(?<currentValue>[^}]+)\\}\""
+      ],
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^README\\.md$/"],
+      "matchStrings": [
+        "ghcr\\.io/icoretech/codex-docker:(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "\\| `image_version` \\| No \\| `(?<currentValue>\\d+\\.\\d+\\.\\d+)` \\|"
+      ],
+      "depNameTemplate": "ghcr.io/icoretech/codex-docker",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Keep codex-docker default image pins together",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["ghcr.io/icoretech/codex-docker"],
+      "groupName": "codex-docker image",
+      "groupSlug": "codex-docker-image"
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "groupSlug": "github-actions"
+    },
+    {
+      "description": "Automerge non-major updates after checks pass",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ]
+}

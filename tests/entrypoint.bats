@@ -382,6 +382,25 @@ teardown() {
 
 # --- Image Version Tests ---
 
+@test "renovate watches action and codex-docker image pins" {
+  [ -f renovate.json ]
+
+  jq -e '.enabledManagers | index("github-actions") and index("custom.regex")' renovate.json >/dev/null
+  jq -e '
+    .customManagers
+    | map(select(.depNameTemplate == "ghcr.io/icoretech/codex-docker" or (.matchStrings[]? | contains("depName=(?<depName>"))))
+    | length >= 3
+  ' renovate.json >/dev/null
+  jq -e '.customManagers[].managerFilePatterns[] | select(. == "/^action\\.yml$/")' renovate.json >/dev/null
+  jq -e '.customManagers[].managerFilePatterns[] | select(. == "/^entrypoint\\.sh$/")' renovate.json >/dev/null
+  jq -e '.customManagers[].managerFilePatterns[] | select(. == "/^README\\.md$/")' renovate.json >/dev/null
+  jq -e '
+    .packageRules[]
+    | select(.matchPackageNames[]? == "ghcr.io/icoretech/codex-docker")
+    | select(.groupSlug == "codex-docker-image")
+  ' renovate.json >/dev/null
+}
+
 @test "image version: uses custom version in docker calls" {
   export INPUT_IMAGE_VERSION="1.0.0"
   run bash entrypoint.sh
