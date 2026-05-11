@@ -51,7 +51,7 @@ openai_api_key="${INPUT_OPENAI_API_KEY:-}"
 codex_config="${INPUT_CODEX_CONFIG:-}"
 codex_config_toml="${INPUT_CODEX_CONFIG_TOML:-}"
 # renovate: datasource=docker depName=ghcr.io/icoretech/codex-docker
-image_version="${INPUT_IMAGE_VERSION:-0.115.0}"
+image_version="${INPUT_IMAGE_VERSION:-0.130.0}"
 model="${INPUT_MODEL:-}"
 reasoning_effort="${INPUT_REASONING_EFFORT:-}"
 network_access="${INPUT_NETWORK_ACCESS:-false}"
