@@ -43,7 +43,8 @@
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["ghcr.io/icoretech/codex-docker"],
       "groupName": "codex-docker image",
-      "groupSlug": "codex-docker-image"
+      "groupSlug": "codex-docker-image",
+      "semanticCommitType": "fix"
     },
     {
       "description": "Group GitHub Actions updates",
