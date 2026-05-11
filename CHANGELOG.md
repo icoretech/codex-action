@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.1](https://github.com/icoretech/codex-action/compare/v0.9.0...v0.9.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update ghcr.io/icoretech/codex-docker docker tag to v0.130.0 ([53eb659](https://github.com/icoretech/codex-action/commit/53eb6599c2995419bf19642efb0e48c96dafed0e))
+* make codex-docker Renovate bumps releasable ([565536f](https://github.com/icoretech/codex-action/commit/565536f769b0dea5b52cb1a62680041130f3a934))
+
 ## [0.9.0](https://github.com/icoretech/codex-action/compare/v0.8.0...v0.9.0) (2026-03-18)
 
 
