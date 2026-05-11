@@ -30,7 +30,7 @@ inputs:
     description: 'codex-docker image version tag'
     required: false
     # renovate: datasource=docker depName=ghcr.io/icoretech/codex-docker
-    default: '0.115.0'
+    default: '0.130.0'
   model:
     description: 'Model override (passed to codex exec --model)'
     required: false
