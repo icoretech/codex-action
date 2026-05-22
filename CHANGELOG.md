@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/icoretech/codex-action/compare/v0.9.1...v0.9.2) (2026-05-22)
+
+
+### Bug Fixes
+
+* **deps:** update ghcr.io/icoretech/codex-docker docker tag to v0.132.0 ([#15](https://github.com/icoretech/codex-action/issues/15)) ([c841e27](https://github.com/icoretech/codex-action/commit/c841e27d9380d8861f95918491fd5aa1371f137a))
+* **deps:** update ghcr.io/icoretech/codex-docker docker tag to v0.133.0 ([#17](https://github.com/icoretech/codex-action/issues/17)) ([ca501d3](https://github.com/icoretech/codex-action/commit/ca501d32a262273126fda36e71cdda3d4112267a))
+
 ## [0.9.1](https://github.com/icoretech/codex-action/compare/v0.9.0...v0.9.1) (2026-05-11)
 
 
