@@ -18,7 +18,9 @@ Run OpenAI Codex CLI non-interactively in GitHub Actions workflows via [codex-do
     openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 
 - name: Use result
-  run: echo "${{ steps.codex.outputs.result }}"
+  env:
+    CODEX_RESULT: ${{ steps.codex.outputs.result }}
+  run: printf '%s\n' "$CODEX_RESULT"
 ```
 
 ---
@@ -579,7 +581,9 @@ jobs:
           timeout: "600"
 
       - name: Print analysis
-        run: echo "${{ steps.codex.outputs.result }}"
+        env:
+          CODEX_RESULT: ${{ steps.codex.outputs.result }}
+        run: printf '%s\n' "$CODEX_RESULT"
 ```
 
 ---
