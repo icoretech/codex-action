@@ -346,6 +346,7 @@ jobs:
 Automatically analyze new issues by cloning relevant repositories and posting an implementation plan as a comment. Codex explores the actual source code, references specific files and line numbers, and produces a grounded technical plan.
 
 This recipe demonstrates:
+
 - Fetching rich issue metadata (labels, comments, timeline, project board fields)
 - Resolving issue signals (labels, title brackets, body mentions) to repository names
 - Cloning matched repos so Codex can read the source code
