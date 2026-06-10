@@ -25,22 +25,36 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Merge release pull request
-        if: ${{ steps.release.outputs.prs_created == 'true' }}
+      - name: Find release pull request
+        id: release_pr
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_JSON: ${{ steps.release.outputs.pr }}
         run: |
           set -euo pipefail
 
-          pr_number="$(printf '%s' "${PR_JSON}" | jq -r '.number')"
-          if [ -z "${pr_number}" ] || [ "${pr_number}" = "null" ]; then
-            echo "release-please did not return a pull request number"
-            exit 1
-          fi
+          pr_number="$(
+            gh pr list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --state open \
+              --base "${GITHUB_REF_NAME}" \
+              --label "autorelease: pending" \
+              --json number,headRefName \
+              --jq '.[] | select(.headRefName == "release-please--branches--main") | .number' |
+            head -n 1
+          )"
+
+          echo "number=${pr_number}" >> "${GITHUB_OUTPUT}"
+
+      - name: Merge release pull request
+        if: ${{ steps.release_pr.outputs.number != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.release_pr.outputs.number }}
+        run: |
+          set -euo pipefail
 
           for attempt in 1 2 3 4 5 6; do
-            if gh pr merge "${pr_number}" --repo "${GITHUB_REPOSITORY}" --squash --delete-branch; then
+            if gh pr merge "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --squash --delete-branch; then
               exit 0
             fi
 
@@ -54,7 +68,7 @@ jobs:
       # the release in this same run after the generated PR lands.
       - name: Create release after automated merge
         id: release_after_merge
-        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        if: ${{ steps.release_pr.outputs.number != '' }}
         uses: googleapis/release-please-action@v5
         with:
           config-file: release-please-config.json
