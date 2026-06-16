@@ -28,6 +28,7 @@ jobs:
       - name: Find release pull request
         id: release_pr
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_PRS: ${{ steps.release.outputs.prs }}
         run: |
           set -euo pipefail
@@ -40,6 +41,25 @@ jobs:
               <<< "${RELEASE_PRS:-[]}" |
             head -n 1
           )"
+
+          if [[ -z "${pr_number}" ]]; then
+            for attempt in 1 2 3 4 5 6; do
+              pr_number="$(
+                gh pr list \
+                  --repo "${GITHUB_REPOSITORY}" \
+                  --state open \
+                  --base "${GITHUB_REF_NAME}" \
+                  --label "autorelease: pending" \
+                  --json number,headRefName \
+                  --jq '.[] | select(.headRefName == "release-please--branches--main") | .number' |
+                head -n 1
+              )"
+
+              [[ -n "${pr_number}" ]] && break
+              echo "release PR not found on attempt ${attempt}, retrying"
+              sleep 5
+            done
+          fi
 
           echo "number=${pr_number}" >> "${GITHUB_OUTPUT}"
 
