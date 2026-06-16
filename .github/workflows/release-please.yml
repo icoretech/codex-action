@@ -28,18 +28,16 @@ jobs:
       - name: Find release pull request
         id: release_pr
         env:
-          GH_TOKEN: ${{ github.token }}
+          RELEASE_PRS: ${{ steps.release.outputs.prs }}
         run: |
           set -euo pipefail
 
           pr_number="$(
-            gh pr list \
-              --repo "${GITHUB_REPOSITORY}" \
-              --state open \
-              --base "${GITHUB_REF_NAME}" \
-              --label "autorelease: pending" \
-              --json number,headRefName \
-              --jq '.[] | select(.headRefName == "release-please--branches--main") | .number' |
+            jq -r \
+              --arg base "${GITHUB_REF_NAME}" \
+              --arg head "release-please--branches--main" \
+              '.[] | select(.baseBranchName == $base and .headBranchName == $head) | .number' \
+              <<< "${RELEASE_PRS:-[]}" |
             head -n 1
           )"
 
