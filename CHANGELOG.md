@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.13](https://github.com/icoretech/codex-action/compare/v0.9.12...v0.9.13) (2026-06-27)
+
+
+### Bug Fixes
+
+* normalize codex-docker Renovate release titles ([d1da60b](https://github.com/icoretech/codex-action/commit/d1da60bc7dd7ddf820894cc859cd4ce43b46da74))
+
 ## [0.9.12](https://github.com/icoretech/codex-action/compare/v0.9.11...v0.9.12) (2026-06-25)
 
 
