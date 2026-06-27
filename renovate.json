@@ -44,7 +44,12 @@
       "matchPackageNames": ["ghcr.io/icoretech/codex-docker"],
       "groupName": "codex-docker image",
       "groupSlug": "codex-docker-image",
-      "semanticCommitType": "fix"
+      "semanticCommits": "enabled",
+      "semanticCommitType": "fix",
+      "commitMessagePrefix": "fix(deps):",
+      "commitMessageAction": "update",
+      "commitMessageTopic": "codex-docker image",
+      "commitMessageExtra": "to {{prettyNewVersion}}"
     },
     {
       "description": "Group GitHub Actions updates",
