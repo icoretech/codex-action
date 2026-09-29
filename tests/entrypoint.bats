@@ -408,3 +408,14 @@ teardown() {
   [[ "$(docker_call 0)" == *"ghcr.io/icoretech/codex-docker:1.0.0"* ]]
   [[ "$(docker_call 1)" == *"ghcr.io/icoretech/codex-docker:1.0.0"* ]]
 }
+
+@test "image version: unset input uses the declared action default" {
+  unset INPUT_IMAGE_VERSION
+  local declared_version
+  declared_version=$(awk '/^  image_version:/{in_image=1; next} in_image && /^    default:/{gsub(/\047/, "", $2); print $2; exit}' action.yml)
+  [ -n "$declared_version" ]
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [[ "$(docker_call 0)" == *"ghcr.io/icoretech/codex-docker:${declared_version}"* ]]
+  [[ "$(docker_call 1)" == *"ghcr.io/icoretech/codex-docker:${declared_version}"* ]]
+}
