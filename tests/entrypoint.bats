@@ -388,11 +388,16 @@ check_private_runtime() {
 
 # --- Git Safe Directory Tests ---
 
-@test "gitconfig: creates .codex-gitconfig in workspace" {
+@test "gitconfig: creates and removes a private runtime config" {
   run bash entrypoint.sh
   [ "$status" -eq 0 ]
-  # File is cleaned up, but we can verify it was passed to docker
-  [[ "$(docker_call 1)" == *"GIT_CONFIG_GLOBAL=/workspace/.codex-gitconfig"* ]]
+  local config_path
+  config_path=$(cat "${BATS_TEST_TMPDIR}/docker_gitconfig_path_1")
+  [[ "$config_path" != "$GITHUB_WORKSPACE/"* ]]
+  [ "$(cat "${BATS_TEST_TMPDIR}/docker_gitconfig_mode_1")" = 600 ]
+  [ "$(cat "${BATS_TEST_TMPDIR}/docker_gitconfig_safe_dirs_1")" = '*' ]
+  [ ! -e "$config_path" ]
+  [ ! -e "$GITHUB_WORKSPACE/.codex-gitconfig" ]
 }
 
 @test "gitconfig: passes GIT_CONFIG_GLOBAL env var to exec container" {
@@ -400,7 +405,81 @@ check_private_runtime() {
   [ "$status" -eq 0 ]
   local exec_call
   exec_call=$(docker_call 1)
-  [[ "${exec_call}" == *"-e GIT_CONFIG_GLOBAL=/workspace/.codex-gitconfig"* ]]
+  [[ "${exec_call}" == *"-e GIT_CONFIG_GLOBAL=/home/codex/.gitconfig"* ]]
+}
+
+check_workspace_gitconfig_preserved() {
+  local kind="$1" outcome="$2" target mode
+  target="$GITHUB_WORKSPACE/.codex-gitconfig"
+  if [[ "$kind" == symlink ]]; then
+    target="$BATS_TEST_TMPDIR/protected-gitconfig"
+    ln -s ../protected-gitconfig "$GITHUB_WORKSPACE/.codex-gitconfig"
+    mode=600
+  else
+    mode=640
+  fi
+  printf '[fixture]\n\tvalue = preserve exactly\n' > "$target"
+  chmod "$mode" "$target"
+  cp "$target" "$BATS_TEST_TMPDIR/original-gitconfig"
+  if [[ "$kind" == tracked ]]; then
+    git -C "$GITHUB_WORKSPACE" init -q
+    git -C "$GITHUB_WORKSPACE" add .codex-gitconfig
+  fi
+  case "$outcome" in
+    bootstrap_failure) set_docker_exit_codes 1 ;;
+    exec_failure) set_docker_exit_codes 0 1 ;;
+  esac
+  run bash entrypoint.sh
+  if [[ "$outcome" == success ]]; then
+    [ "$status" -eq 0 ]
+  else
+    [ "$status" -ne 0 ]
+  fi
+  [ -f "$target" ]
+  cmp "$target" "$BATS_TEST_TMPDIR/original-gitconfig"
+  [ "$(stat -c %a "$target" 2>/dev/null || stat -f %Lp "$target")" = "$mode" ]
+  if [[ "$kind" == symlink ]]; then
+    [ -L "$GITHUB_WORKSPACE/.codex-gitconfig" ]
+    [ "$(readlink "$GITHUB_WORKSPACE/.codex-gitconfig")" = ../protected-gitconfig ]
+  elif [[ "$kind" == tracked ]]; then
+    git -C "$GITHUB_WORKSPACE" diff --exit-code -- .codex-gitconfig
+  fi
+}
+
+@test "gitconfig: preserves ordinary file on success" {
+  check_workspace_gitconfig_preserved regular success
+}
+
+@test "gitconfig: preserves ordinary file on bootstrap failure" {
+  check_workspace_gitconfig_preserved regular bootstrap_failure
+}
+
+@test "gitconfig: preserves ordinary file on exec failure" {
+  check_workspace_gitconfig_preserved regular exec_failure
+}
+
+@test "gitconfig: preserves symlink and target on success" {
+  check_workspace_gitconfig_preserved symlink success
+}
+
+@test "gitconfig: preserves symlink and target on bootstrap failure" {
+  check_workspace_gitconfig_preserved symlink bootstrap_failure
+}
+
+@test "gitconfig: preserves symlink and target on exec failure" {
+  check_workspace_gitconfig_preserved symlink exec_failure
+}
+
+@test "gitconfig: preserves tracked file on success" {
+  check_workspace_gitconfig_preserved tracked success
+}
+
+@test "gitconfig: preserves tracked file on bootstrap failure" {
+  check_workspace_gitconfig_preserved tracked bootstrap_failure
+}
+
+@test "gitconfig: preserves tracked file on exec failure" {
+  check_workspace_gitconfig_preserved tracked exec_failure
 }
 
 # --- Image Version Tests ---

@@ -12,6 +12,26 @@ docker() {
   # Read through a child process so an unexported shell variable cannot pass.
   bash -c 'printf "%s" "${OPENAI_API_KEY:-}"' > "${BATS_TEST_TMPDIR}/docker_api_key_${call_num}"
 
+  # Resolve the declared container Git config through the actual bind mounts.
+  local arg container_gitconfig="" host_gitconfig="" source target
+  for arg in "$@"; do
+    [[ "$arg" == GIT_CONFIG_GLOBAL=* ]] && container_gitconfig=${arg#GIT_CONFIG_GLOBAL=}
+  done
+  if [[ -n "$container_gitconfig" ]]; then
+    for arg in "$@"; do
+      if [[ "$arg" == *:/* ]]; then
+        source=${arg%%:*}
+        target=${arg#*:}
+        if [[ "$container_gitconfig" == "$target/"* ]]; then
+          host_gitconfig="$source/${container_gitconfig#"$target/"}"
+        fi
+      fi
+    done
+    printf '%s' "$host_gitconfig" > "${BATS_TEST_TMPDIR}/docker_gitconfig_path_${call_num}"
+    stat -c %a "$host_gitconfig" 2>/dev/null > "${BATS_TEST_TMPDIR}/docker_gitconfig_mode_${call_num}" || stat -f %Lp "$host_gitconfig" > "${BATS_TEST_TMPDIR}/docker_gitconfig_mode_${call_num}"
+    GIT_CONFIG_GLOBAL="$host_gitconfig" GIT_CONFIG_NOSYSTEM=1 git config --global --get-all safe.directory > "${BATS_TEST_TMPDIR}/docker_gitconfig_safe_dirs_${call_num}"
+  fi
+
   if [[ "${DOCKER_MOCK_RUNTIME_AUDIT:-}" == true ]]; then
     local mount auth_path=""
     for mount in "$@"; do
