@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 # --- Helpers ---
 
@@ -9,11 +10,9 @@ die() {
 }
 
 cleanup() {
-  # auth_dir may contain files owned by the container user (uid 1000);
-  # chmod before removal so the runner user can delete them.
-  for dir in "${auth_dir:-}" "${output_dir:-}"; do
+  # Containers use the runner's uid/gid, so cleanup needs no permission widening.
+  for dir in "${runtime_home:-}" "${output_dir:-}"; do
     if [[ -d "${dir}" ]]; then
-      chmod -R 777 "${dir}" 2>/dev/null || true
       rm -rf "${dir}" 2>/dev/null || true
     fi
   done
@@ -108,16 +107,20 @@ fi
 
 # --- Setup auth ---
 
-auth_dir=$(mktemp -d)
-chmod 777 "${auth_dir}"
+container_user="$(id -u):$(id -g)"
+runtime_home=$(mktemp -d)
+auth_dir="${runtime_home}/.codex"
+mkdir "${auth_dir}"
 
 if [[ -n "${openai_api_key}" ]]; then
   # API key auth: run codex-bootstrap to write credentials
   export OPENAI_API_KEY="${openai_api_key}"
   docker run --rm -i \
+    --user "${container_user}" \
+    -e HOME=/home/codex \
     -e CODEX_HOME=/home/codex/.codex \
     -e OPENAI_API_KEY \
-    -v "${auth_dir}:/home/codex/.codex" \
+    -v "${runtime_home}:/home/codex" \
     "${image}" \
     codex-bootstrap api-key-login
 elif [[ -n "${codex_config}" ]]; then
@@ -152,18 +155,18 @@ fi
 # --- Run codex ---
 
 output_dir=$(mktemp -d)
-chmod 777 "${output_dir}"
 output_file="${output_dir}/result.txt"
 
-# Pre-configure git safe.directory so codex (running as a different uid inside
-# Docker) can operate on repos cloned by the runner without "dubious ownership"
-# errors. The file is mounted into the container and referenced via
-# GIT_CONFIG_GLOBAL.
+# Pre-configure git safe.directory so codex can operate on mounted checkouts
+# without "dubious ownership" errors. The file is mounted into the container
+# and referenced via GIT_CONFIG_GLOBAL.
 gitconfig_file="${GITHUB_WORKSPACE}/.codex-gitconfig"
 printf '[safe]\n\tdirectory = *\n' > "${gitconfig_file}"
 chmod 644 "${gitconfig_file}"
 
 cmd=(docker run --rm -i
+  --user "${container_user}"
+  -e HOME=/home/codex
   -e CODEX_HOME=/home/codex/.codex
   -e GIT_CONFIG_GLOBAL=/workspace/.codex-gitconfig)
 
@@ -175,7 +178,7 @@ if [[ "${quiet}" == "true" ]]; then
 fi
 
 cmd+=(
-  -v "${auth_dir}:/home/codex/.codex"
+  -v "${runtime_home}:/home/codex"
   -v "${GITHUB_WORKSPACE}:/workspace"
   -v "${output_dir}:/tmp/codex_out"
   "${image}"

@@ -117,6 +117,99 @@ assert_api_key_absent_from_docker_argv() {
   [[ "$(docker_call 0)" == *"exec --ephemeral --skip-git-repo-check"* ]]
 }
 
+assert_private_runtime_lifecycle() {
+  local phase kind mode path expected
+  [ -s "$RUNTIME_MODES" ]
+  grep -q '^docker_start ' "$RUNTIME_MODES"
+  grep -q '^before_remove ' "$RUNTIME_MODES"
+  while read -r phase kind mode; do
+    case "$kind" in
+      directory) expected=700 ;;
+      file) expected=600 ;;
+    esac
+    if [[ "$mode" != "$expected" ]]; then
+      printf '%s %s mode=%s expected=%s\n' "$phase" "$kind" "$mode" "$expected" >&2
+      return 1
+    fi
+  done < "$RUNTIME_MODES"
+  while IFS= read -r path; do
+    [ ! -e "$path" ] || return 1
+  done < "$RUNTIME_PATHS"
+}
+
+check_private_runtime() {
+  local mask="$1" auth_method="$2" outcome="$3"
+  export DOCKER_MOCK_RUNTIME_AUDIT=true
+  export INPUT_CODEX_CONFIG_TOML
+  INPUT_CODEX_CONFIG_TOML=$(printf 'model = "example"\n' | base64)
+  if [[ "$auth_method" == config ]]; then
+    export INPUT_OPENAI_API_KEY=""
+    export INPUT_CODEX_CONFIG
+    INPUT_CODEX_CONFIG=$(printf '{}' | base64)
+  fi
+  case "$outcome" in
+    bootstrap_failure) set_docker_exit_codes 1 ;;
+    exec_failure)
+      if [[ "$auth_method" == config ]]; then
+        set_docker_exit_codes 1
+      else
+        set_docker_exit_codes 0 1
+      fi
+      ;;
+  esac
+  run bash -c 'umask "$1"; exec bash entrypoint.sh' _ "$mask"
+  if [[ "$outcome" == success ]]; then
+    [ "$status" -eq 0 ]
+  else
+    [ "$status" -ne 0 ]
+  fi
+  assert_private_runtime_lifecycle
+  [[ "$(docker_call 0)" == *"--user $(id -u):$(id -g) "* ]]
+  if [[ "$(docker_call_count)" -eq 2 ]]; then
+    [[ "$(docker_call 1)" == *"--user $(id -u):$(id -g) "* ]]
+  fi
+}
+
+@test "private runtime: config auth at umask 022" {
+  check_private_runtime 022 config success
+}
+
+@test "private runtime: config auth at umask 077" {
+  check_private_runtime 077 config success
+}
+
+@test "private runtime: API bootstrap and exec at umask 022" {
+  check_private_runtime 022 api success
+}
+
+@test "private runtime: API bootstrap and exec at umask 077" {
+  check_private_runtime 077 api success
+}
+
+@test "private runtime: bootstrap failure at umask 022" {
+  check_private_runtime 022 api bootstrap_failure
+}
+
+@test "private runtime: bootstrap failure at umask 077" {
+  check_private_runtime 077 api bootstrap_failure
+}
+
+@test "private runtime: exec failure at umask 022" {
+  check_private_runtime 022 api exec_failure
+}
+
+@test "private runtime: exec failure at umask 077" {
+  check_private_runtime 077 api exec_failure
+}
+
+@test "private runtime: config exec failure at umask 022" {
+  check_private_runtime 022 config exec_failure
+}
+
+@test "private runtime: config exec failure at umask 077" {
+  check_private_runtime 077 config exec_failure
+}
+
 # --- Config TOML Tests ---
 
 @test "codex_config_toml: decoded and written alongside api key auth" {
@@ -214,6 +307,12 @@ assert_api_key_absent_from_docker_argv() {
   [ "$status" -eq 0 ]
   # GITHUB_OUTPUT should still have the result delimiters
   [[ "$(cat "${GITHUB_OUTPUT}")" == *"result<<"* ]]
+}
+
+@test "output: fails when successful exec creates no result file" {
+  rm "$DOCKER_MOCK_OUTPUT"
+  run bash entrypoint.sh
+  [ "$status" -ne 0 ]
 }
 
 # --- Error Handling Tests ---

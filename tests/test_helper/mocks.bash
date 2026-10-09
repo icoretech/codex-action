@@ -12,6 +12,22 @@ docker() {
   # Read through a child process so an unexported shell variable cannot pass.
   bash -c 'printf "%s" "${OPENAI_API_KEY:-}"' > "${BATS_TEST_TMPDIR}/docker_api_key_${call_num}"
 
+  if [[ "${DOCKER_MOCK_RUNTIME_AUDIT:-}" == true ]]; then
+    local mount auth_path=""
+    for mount in "$@"; do
+      case "$mount" in
+        *:/home/codex/.codex) auth_path=${mount%:/home/codex/.codex}; printf '%s\n' "$auth_path" >> "$RUNTIME_PATHS" ;;
+        *:/home/codex) auth_path=${mount%:/home/codex}/.codex; printf '%s\n' "${mount%:/home/codex}" >> "$RUNTIME_PATHS" ;;
+        *:/tmp/codex_out) printf '%s\n' "${mount%:/tmp/codex_out}" >> "$RUNTIME_PATHS" ;;
+      esac
+    done
+    audit_runtime_modes docker_start
+    if [[ "$*" == *"codex-bootstrap api-key-login"* ]]; then
+      # The real CLI writes private credentials even before a later failure.
+      (umask 077; printf '{}' > "${auth_path}/auth.json")
+    fi
+  fi
+
   # Capture stdin if available
   if [[ ! -t 0 ]]; then
     cat > "${BATS_TEST_TMPDIR}/docker_stdin_${call_num}"
@@ -49,9 +65,41 @@ docker() {
     fi
   fi
 
+  if [[ "${DOCKER_MOCK_RUNTIME_AUDIT:-}" == true ]]; then
+    audit_runtime_modes docker_end
+  fi
   return "${exit_code}"
 }
 export -f docker
+
+audit_runtime_modes() {
+  local root path mode kind
+  while IFS= read -r root; do
+    [[ -d "$root" ]] || continue
+    while IFS= read -r path; do
+      mode=$(stat -c %a "$path" 2>/dev/null || stat -f %Lp "$path")
+      kind=file
+      [[ -d "$path" ]] && kind=directory
+      printf '%s %s %s\n' "$1" "$kind" "$mode" >> "$RUNTIME_MODES"
+    done < <(find "$root" -type d -o -type f)
+  done < "$RUNTIME_PATHS"
+}
+export -f audit_runtime_modes
+
+rm() {
+  if [[ "${DOCKER_MOCK_RUNTIME_AUDIT:-}" == true && -f "${RUNTIME_PATHS}" ]]; then
+    local arg root
+    for arg in "$@"; do
+      while IFS= read -r root; do
+        if [[ "$arg" == "$root" && -d "$root" ]]; then
+          audit_runtime_modes before_remove
+        fi
+      done < "$RUNTIME_PATHS"
+    done
+  fi
+  command rm "$@"
+}
+export -f rm
 
 # Mock timeout/gtimeout — execute command directly without timeout enforcement
 # This ensures the mock docker function (exported via export -f) is reachable,
@@ -69,6 +117,10 @@ gtimeout() {
 export -f gtimeout
 
 setup_mocks() {
+  unset DOCKER_MOCK_RUNTIME_AUDIT
+  export RUNTIME_PATHS="${BATS_TEST_TMPDIR}/runtime_paths"
+  export RUNTIME_MODES="${BATS_TEST_TMPDIR}/runtime_modes"
+  touch "$RUNTIME_PATHS" "$RUNTIME_MODES"
   export DOCKER_CALLS="${BATS_TEST_TMPDIR}/docker_calls"
   export DOCKER_MOCK_OUTPUT="${BATS_TEST_TMPDIR}/docker_mock_output"
   export DOCKER_MOCK_STDERR="${BATS_TEST_TMPDIR}/docker_mock_stderr"
@@ -88,6 +140,7 @@ setup_mocks() {
 }
 
 teardown_mocks() {
+  unset DOCKER_MOCK_RUNTIME_AUDIT
   rm -rf "${BATS_TEST_TMPDIR}"
 }
 
