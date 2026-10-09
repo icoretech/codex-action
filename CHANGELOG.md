@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.52](https://github.com/icoretech/codex-action/compare/v0.9.51...v0.9.52) (2026-10-09)
+
+
+### Bug Fixes
+
+* **auth:** pass bootstrap API key through the environment ([c15a6a3](https://github.com/icoretech/codex-action/commit/c15a6a347b11c14206c95590fcbfba3ccf0eab3a))
+
 ## [0.9.51](https://github.com/icoretech/codex-action/compare/v0.9.50...v0.9.51) (2026-10-08)
 
 
