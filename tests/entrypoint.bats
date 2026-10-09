@@ -16,6 +16,7 @@ setup() {
   export INPUT_NETWORK_ACCESS="true"
   export INPUT_QUIET="false"
   export INPUT_TIMEOUT="300"
+  unset OPENAI_API_KEY
 
   # Set mock docker to return some output
   echo "Test output from codex" > "${DOCKER_MOCK_OUTPUT}"
@@ -67,11 +68,40 @@ teardown() {
 
   # First call: bootstrap api-key-login
   [[ "$(docker_call 0)" == *"codex-bootstrap api-key-login"* ]]
-  [[ "$(docker_call 0)" == *"-e OPENAI_API_KEY=sk-test-key-12345"* ]]
+  [[ "$(docker_call 0)" == *"-e OPENAI_API_KEY "* ]]
+  [ "$(cat "${BATS_TEST_TMPDIR}/docker_api_key_0")" = "${INPUT_OPENAI_API_KEY}" ]
+  assert_api_key_absent_from_docker_argv
 
   # Second call: exec
   [[ "$(docker_call 1)" == *"exec --ephemeral --skip-git-repo-check"* ]]
   [[ "$(docker_call 1)" == *"--full-auto"* ]]
+}
+
+assert_api_key_absent_from_docker_argv() {
+  local argv_file arg
+  for argv_file in "${BATS_TEST_TMPDIR}"/docker_argv_*; do
+    while IFS= read -r -d '' arg; do
+      [[ "${arg}" != *"${INPUT_OPENAI_API_KEY}"* ]] || return 1
+      [[ "${arg}" != OPENAI_API_KEY=* ]] || return 1
+    done < "${argv_file}"
+  done
+}
+
+@test "api key auth: credential value is absent from every Docker argument" {
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [ "$(docker_call_count)" -eq 2 ]
+  assert_api_key_absent_from_docker_argv
+}
+
+@test "api key auth: selected input replaces inherited key in child environment only" {
+  export OPENAI_API_KEY="different-inherited-fixture"
+  export INPUT_OPENAI_API_KEY="synthetic key with spaces"
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [ "$(docker_call_count)" -eq 2 ]
+  [ "$(cat "${BATS_TEST_TMPDIR}/docker_api_key_0")" = "${INPUT_OPENAI_API_KEY}" ]
+  assert_api_key_absent_from_docker_argv
 }
 
 @test "config auth: decodes base64 and runs single exec" {

@@ -8,6 +8,9 @@ docker() {
   local call_num
   call_num=$(wc -l < "${DOCKER_CALLS}" | tr -d ' ')
   echo "$*" >> "${DOCKER_CALLS}"
+  printf '%s\0' "$@" > "${BATS_TEST_TMPDIR}/docker_argv_${call_num}"
+  # Read through a child process so an unexported shell variable cannot pass.
+  bash -c 'printf "%s" "${OPENAI_API_KEY:-}"' > "${BATS_TEST_TMPDIR}/docker_api_key_${call_num}"
 
   # Capture stdin if available
   if [[ ! -t 0 ]]; then

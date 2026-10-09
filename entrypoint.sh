@@ -113,9 +113,10 @@ chmod 777 "${auth_dir}"
 
 if [[ -n "${openai_api_key}" ]]; then
   # API key auth: run codex-bootstrap to write credentials
+  export OPENAI_API_KEY="${openai_api_key}"
   docker run --rm -i \
     -e CODEX_HOME=/home/codex/.codex \
-    -e "OPENAI_API_KEY=${openai_api_key}" \
+    -e OPENAI_API_KEY \
     -v "${auth_dir}:/home/codex/.codex" \
     "${image}" \
     codex-bootstrap api-key-login
