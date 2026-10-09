@@ -44,7 +44,7 @@ inputs:
     required: false
     default: 'false'
   sandbox:
-    description: 'Sandbox mode for Codex execution. Options: full-auto (default, uses bubblewrap), danger-full-access (disables sandbox — recommended for CI/Docker where the container is already isolated).'
+    description: 'Sandbox mode for Codex execution. Options: full-auto (default, selects workspace-write), danger-full-access (explicitly disables the sandbox). Approval behavior remains controlled by Codex and your configuration.'
     required: false
     default: 'full-auto'
   quiet:

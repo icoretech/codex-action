@@ -153,7 +153,7 @@ assert_invalid_timeout() {
 
   # Second call: exec
   [[ "$(docker_call 1)" == *"exec --ephemeral --skip-git-repo-check"* ]]
-  [[ "$(docker_call 1)" == *"--full-auto"* ]]
+  [[ "$(docker_call 1)" == *"--sandbox workspace-write"* ]]
 }
 
 assert_api_key_absent_from_docker_argv() {
@@ -609,23 +609,42 @@ check_workspace_gitconfig_preserved() {
 
 # --- Sandbox Tests ---
 
-@test "sandbox: defaults to full-auto without --sandbox flag" {
+@test "sandbox: defaults to workspace-write with accepted CLI arguments" {
+  unset INPUT_SANDBOX INPUT_IMAGE_VERSION
   run bash entrypoint.sh
   [ "$status" -eq 0 ]
+  assert_installed_exec_parser
   local exec_call
   exec_call=$(docker_call 1)
-  [[ "${exec_call}" == *"--full-auto"* ]]
-  [[ "${exec_call}" != *"--sandbox"* ]]
+  [[ "${exec_call}" == *"--sandbox workspace-write"* ]]
+  [[ "${exec_call}" != *"--full-auto"* ]]
+  [[ "${exec_call}" != *"--approve-for-me"* ]]
+  [[ "${exec_call}" != *"--dangerously-bypass"* ]]
+}
+
+@test "sandbox: explicit full-auto retains workspace-write without approval overrides" {
+  export INPUT_SANDBOX=full-auto
+  unset INPUT_IMAGE_VERSION
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  assert_installed_exec_parser
+  [[ "$(docker_call 1)" == *"--sandbox workspace-write"* ]]
+  [[ "$(docker_call 1)" != *"approval_policy"* ]]
+  [[ "$(docker_call 1)" != *"approvals_reviewer"* ]]
 }
 
 @test "sandbox: danger-full-access adds --sandbox flag" {
   export INPUT_SANDBOX="danger-full-access"
+  unset INPUT_IMAGE_VERSION
   run bash entrypoint.sh
   [ "$status" -eq 0 ]
+  assert_installed_exec_parser
   local exec_call
   exec_call=$(docker_call 1)
-  [[ "${exec_call}" == *"--full-auto"* ]]
+  [[ "${exec_call}" != *"--full-auto"* ]]
   [[ "${exec_call}" == *"--sandbox danger-full-access"* ]]
+  [[ "${exec_call}" != *"--sandbox workspace-write"* ]]
+  [[ "${exec_call}" != *"--dangerously-bypass"* ]]
 }
 
 @test "sandbox: rejects invalid values" {

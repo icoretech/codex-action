@@ -188,13 +188,13 @@ cmd+=(
   -v "${GITHUB_WORKSPACE}:/workspace"
   -v "${output_dir}:/tmp/codex_out"
   "${image}"
-  exec --ephemeral --skip-git-repo-check
-  --full-auto)
+  exec --ephemeral --skip-git-repo-check)
 
-# Override the sandbox when the user requests danger-full-access (recommended for
-# CI/Docker where the container itself is already an isolation boundary).
+# Keep the public full-auto input while selecting a supported CLI sandbox value.
 if [[ "${sandbox}" == "danger-full-access" ]]; then
   cmd+=(--sandbox danger-full-access)
+else
+  cmd+=(--sandbox workspace-write)
 fi
 
 cmd+=(-C /workspace -o /tmp/codex_out/result.txt)

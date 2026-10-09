@@ -174,6 +174,36 @@ setup_path_without_timeout() {
   done
 }
 
+# Enable with VERIFY_CODEX_CLI=1 to check the installed action-pinned image.
+# Empty stdin reaches config/parser validation without requesting a model turn.
+assert_installed_exec_parser() {
+  [[ "${VERIFY_CODEX_CLI:-}" == 1 ]] || return 0
+  local arg image="" docker_binary contract_home owner rc=0
+  local cli_args=()
+  docker_binary=$(type -P docker)
+  while IFS= read -r -d '' arg; do
+    if [[ -n "$image" ]]; then
+      cli_args+=("$arg")
+    elif [[ "$arg" == ghcr.io/icoretech/codex-docker:* ]]; then
+      image=$arg
+    fi
+  done < "${BATS_TEST_TMPDIR}/docker_argv_1"
+  "$docker_binary" image inspect "$image" >/dev/null
+  contract_home="${BATS_TEST_TMPDIR}/cli-home"
+  (umask 077; mkdir -p "$contract_home/.codex")
+  owner="codex-action-test-${BATS_TEST_NUMBER}-$$"
+  "$docker_binary" run --rm --pull never --network none --label "codex-action-test=$owner" \
+    --user "$(id -u):$(id -g)" -e HOME=/home/codex -e CODEX_HOME=/home/codex/.codex \
+    -v "$contract_home:/home/codex" "$image" "${cli_args[@]}" </dev/null \
+    > "${BATS_TEST_TMPDIR}/cli.stdout" 2> "${BATS_TEST_TMPDIR}/cli.stderr" || rc=$?
+  if [[ "$rc" -ne 1 ]]; then
+    sed -n '/^error:/p' "${BATS_TEST_TMPDIR}/cli.stderr" >&2
+    return 1
+  fi
+  grep -q '^No prompt provided via stdin\.$' "${BATS_TEST_TMPDIR}/cli.stderr"
+  [ -z "$("$docker_binary" ps -aq --filter "label=codex-action-test=$owner")" ]
+}
+
 teardown_mocks() {
   unset DOCKER_MOCK_RUNTIME_AUDIT
   rm -rf "${BATS_TEST_TMPDIR}"

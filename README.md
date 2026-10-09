@@ -151,7 +151,7 @@ You can pass a base64-encoded `config.toml` to customize Codex behavior (model d
 | `model` | No | `""` | Model override passed to `codex exec --model`. When omitted, the model configured in your Codex config is used. |
 | `reasoning_effort` | No | `""` | Reasoning effort level (`minimal`, `low`, `medium`, `high`, `xhigh`). Passed as `model_reasoning_effort` config override. |
 | `network_access` | No | `false` | Allow Codex to make network requests (`curl`, `wget`, etc.) during execution. When `false`, a prompt-level policy instructs the model not to use networking tools. |
-| `sandbox` | No | `full-auto` | Sandbox mode for Codex execution. `full-auto` uses bubblewrap isolation (default). `danger-full-access` disables the sandbox — recommended for CI/Docker where the container is already an isolation boundary. Fixes `bwrap: No permissions to create a new namespace` errors on some runners. |
+| `sandbox` | No | `full-auto` | Sandbox mode for Codex execution. `full-auto` selects the `workspace-write` sandbox (default). `danger-full-access` explicitly disables the sandbox. Approval behavior remains controlled by Codex and your configuration. |
 | `quiet` | No | `true` | Suppress verbose Codex output (tool calls, grep results, file reads) from workflow logs. Prevents source code leakage in CI logs. Set to `false` for debugging. |
 | `timeout` | No | `300` | Positive integer timeout in seconds for Codex execution. Requires `timeout` or `gtimeout` on the runner. |
 
