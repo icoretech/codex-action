@@ -125,19 +125,23 @@ export -f rm
 # This ensures the mock docker function (exported via export -f) is reachable,
 # since the real timeout binary uses execvp which bypasses bash functions.
 timeout() {
+  printf 'timeout %s\n' "$1" >> "$TIMEOUT_CALLS"
   shift  # discard the timeout seconds argument
   "$@"
 }
 export -f timeout
 
 gtimeout() {
+  printf 'gtimeout %s\n' "$1" >> "$TIMEOUT_CALLS"
   shift
   "$@"
 }
 export -f gtimeout
 
 setup_mocks() {
-  unset DOCKER_MOCK_RUNTIME_AUDIT
+  unset DOCKER_MOCK_RUNTIME_AUDIT REMOVE_TIMEOUT_MOCKS PATH_WITHOUT_TIMEOUT RUNTIME_ACQUISITIONS
+  export TIMEOUT_CALLS="${BATS_TEST_TMPDIR}/timeout_calls"
+  touch "$TIMEOUT_CALLS"
   export RUNTIME_PATHS="${BATS_TEST_TMPDIR}/runtime_paths"
   export RUNTIME_MODES="${BATS_TEST_TMPDIR}/runtime_modes"
   touch "$RUNTIME_PATHS" "$RUNTIME_MODES"
@@ -157,6 +161,17 @@ setup_mocks() {
   # Mock GITHUB_WORKSPACE
   export GITHUB_WORKSPACE="${BATS_TEST_TMPDIR}/workspace"
   mkdir -p "${GITHUB_WORKSPACE}"
+}
+
+# Isolate timer lookup from installed tools without hiding action dependencies.
+setup_path_without_timeout() {
+  local utility executable
+  export PATH_WITHOUT_TIMEOUT="${BATS_TEST_TMPDIR}/no-timeout-bin"
+  mkdir "$PATH_WITHOUT_TIMEOUT"
+  for utility in bash base64 cat chmod date find git grep head id mkdir mktemp rm sed stat tail tr wc; do
+    executable=$(type -P "$utility")
+    ln -s "$executable" "$PATH_WITHOUT_TIMEOUT/$utility"
+  done
 }
 
 teardown_mocks() {

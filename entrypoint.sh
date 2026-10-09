@@ -29,16 +29,10 @@ b64decode() {
   fi
 }
 
-# Cross-platform timeout (GNU coreutils on Linux, gtimeout on macOS via brew)
+# The timeout command is selected before runtime setup.
 run_with_timeout() {
   local seconds="$1"; shift
-  if command -v timeout >/dev/null 2>&1; then
-    timeout "${seconds}" "$@"
-  elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "${seconds}" "$@"
-  else
-    "$@"
-  fi
+  "${timeout_command}" "${seconds}" "$@"
 }
 
 # --- Read inputs ---
@@ -89,6 +83,20 @@ case "${sandbox}" in
   full-auto|danger-full-access) ;;
   *) die "sandbox must be 'full-auto' or 'danger-full-access', got '${sandbox}'" ;;
 esac
+
+if [[ ! "${timeout_seconds}" =~ ^[0-9]+$ || ! "${timeout_seconds}" =~ [1-9] ]]; then
+  die "timeout must be a positive integer number of seconds"
+fi
+# Normalize zero-padded decimal values without shell integer arithmetic.
+timeout_seconds="${timeout_seconds#"${timeout_seconds%%[!0]*}"}"
+
+if command -v timeout >/dev/null 2>&1; then
+  timeout_command=timeout
+elif command -v gtimeout >/dev/null 2>&1; then
+  timeout_command=gtimeout
+else
+  die "timeout or gtimeout is required; install GNU coreutils"
+fi
 
 # Validate base64 if codex_config is provided
 if [[ -n "${codex_config}" ]]; then

@@ -61,6 +61,85 @@ teardown() {
 
 # --- Auth Tests ---
 
+run_recording_runtime_acquisition() {
+  export RUNTIME_ACQUISITIONS="${BATS_TEST_TMPDIR}/runtime_acquisitions"
+  : > "$RUNTIME_ACQUISITIONS"
+  run bash -c '
+    mktemp() { printf "acquired\n" >> "$RUNTIME_ACQUISITIONS"; command mktemp "$@"; }
+    export -f mktemp
+    if [[ -n "${PATH_WITHOUT_TIMEOUT:-}" ]]; then PATH=$PATH_WITHOUT_TIMEOUT; fi
+    if [[ "${REMOVE_TIMEOUT_MOCKS:-}" == true ]]; then unset -f timeout gtimeout; fi
+    exec bash entrypoint.sh
+  '
+}
+
+assert_invalid_timeout() {
+  local auth
+  export INPUT_TIMEOUT="$1"
+  for auth in api config; do
+    : > "$DOCKER_CALLS"
+    if [[ "$auth" == config ]]; then
+      export INPUT_OPENAI_API_KEY="" INPUT_CODEX_CONFIG=e30=
+    fi
+    run_recording_runtime_acquisition
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"timeout must be a positive integer number of seconds"* ]]
+    [ "$(docker_call_count)" -eq 0 ]
+    [ ! -s "$RUNTIME_ACQUISITIONS" ]
+  done
+}
+
+@test "timeout: rejects zero before setup and Docker" { assert_invalid_timeout 0; }
+@test "timeout: rejects zero-padded zero before setup and Docker" { assert_invalid_timeout 000; }
+@test "timeout: rejects negative before setup and Docker" { assert_invalid_timeout -1; }
+@test "timeout: rejects fraction before setup and Docker" { assert_invalid_timeout 1.5; }
+@test "timeout: rejects unit suffix before setup and Docker" { assert_invalid_timeout 1s; }
+@test "timeout: rejects text before setup and Docker" { assert_invalid_timeout abc; }
+@test "timeout: rejects whitespace before setup and Docker" { assert_invalid_timeout ' '; }
+
+@test "timeout: missing timeout and gtimeout fails before setup and bootstrap" {
+  setup_path_without_timeout
+  export REMOVE_TIMEOUT_MOCKS=true
+  run_recording_runtime_acquisition
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"timeout or gtimeout is required"* ]]
+  [ "$(docker_call_count)" -eq 0 ]
+  [ ! -s "$RUNTIME_ACQUISITIONS" ]
+}
+
+@test "timeout: defaults to 300 when unset or empty" {
+  unset INPUT_TIMEOUT
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TIMEOUT_CALLS")" = 'timeout 300' ]
+  : > "$TIMEOUT_CALLS"
+  export INPUT_TIMEOUT=''
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TIMEOUT_CALLS")" = 'timeout 300' ]
+}
+
+@test "timeout: positive integer uses timeout before gtimeout" {
+  export INPUT_TIMEOUT=600
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TIMEOUT_CALLS")" = 'timeout 600' ]
+}
+
+@test "timeout: normalizes zero-padded positive integer as decimal" {
+  export INPUT_TIMEOUT=0008
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TIMEOUT_CALLS")" = 'timeout 8' ]
+}
+
+@test "timeout: gtimeout fallback retains bounded invocation" {
+  setup_path_without_timeout
+  run bash -c 'unset -f timeout; PATH=$PATH_WITHOUT_TIMEOUT; exec bash entrypoint.sh'
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TIMEOUT_CALLS")" = 'gtimeout 300' ]
+}
+
 @test "api key auth: runs codex-bootstrap then exec" {
   run bash entrypoint.sh
   [ "$status" -eq 0 ]

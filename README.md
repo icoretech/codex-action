@@ -153,7 +153,7 @@ You can pass a base64-encoded `config.toml` to customize Codex behavior (model d
 | `network_access` | No | `false` | Allow Codex to make network requests (`curl`, `wget`, etc.) during execution. When `false`, a prompt-level policy instructs the model not to use networking tools. |
 | `sandbox` | No | `full-auto` | Sandbox mode for Codex execution. `full-auto` uses bubblewrap isolation (default). `danger-full-access` disables the sandbox — recommended for CI/Docker where the container is already an isolation boundary. Fixes `bwrap: No permissions to create a new namespace` errors on some runners. |
 | `quiet` | No | `true` | Suppress verbose Codex output (tool calls, grep results, file reads) from workflow logs. Prevents source code leakage in CI logs. Set to `false` for debugging. |
-| `timeout` | No | `300` | Maximum seconds allowed for Codex execution before the step is killed. |
+| `timeout` | No | `300` | Positive integer timeout in seconds for Codex execution. Requires `timeout` or `gtimeout` on the runner. |
 
 ---
 
@@ -615,9 +615,9 @@ jobs:
 
 ### Timeout
 
-**Symptoms:** The step is killed after 300 seconds (the default) with a non-zero exit code.
+**Symptoms:** Execution reports a timeout, or the action refuses an invalid timeout value or missing timeout utility.
 
-**Fix:** Increase the `timeout` input:
+**Fix:** Use a positive integer number of seconds. The default is `300`; zero, negative values, fractions and unit suffixes are rejected before Docker starts. Install GNU coreutils if neither `timeout` nor `gtimeout` is available on the runner. For a longer execution interval, increase the `timeout` input:
 
 ```yaml
 with:
