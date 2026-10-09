@@ -52,7 +52,7 @@ inputs:
     required: false
     default: 'true'
   timeout:
-    description: 'Positive integer timeout in seconds for codex execution (default: 300). Requires timeout or gtimeout on the runner.'
+    description: 'Positive integer execution timeout in seconds (default: 300), followed by up to one second of client termination grace and owned-container cleanup. Requires timeout or gtimeout on the runner.'
     required: false
     default: '300'
 

@@ -10,6 +10,21 @@ die() {
 }
 
 cleanup() {
+  local exit_code=$?
+  local cleanup_failed=false
+  trap - EXIT INT TERM
+  if ! remove_execution_container; then
+    cleanup_failed=true
+  fi
+  if [[ -n "${timer_pid:-}" ]]; then
+    kill -TERM "${timer_pid}" 2>/dev/null || true
+    wait "${timer_pid}" 2>/dev/null || true
+  fi
+  if [[ "$cleanup_failed" == true ]]; then
+    # A surviving container can still use its mounted private files.
+    echo "::error::Execution container cleanup failed; private runtime files retained" >&2
+    exit 1
+  fi
   # Containers use the runner's uid/gid, so cleanup needs no permission widening.
   for dir in "${runtime_home:-}" "${output_dir:-}"; do
     if [[ -d "${dir}" ]]; then
@@ -17,8 +32,38 @@ cleanup() {
     fi
   done
   rm -f "${prompt_file:-}" 2>/dev/null || true
+  rm -f "${stderr_log:-}" 2>/dev/null || true
+  exit "${exit_code}"
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+verify_execution_container() {
+  local identity actual_id actual_owner actual_name
+  if ! identity=$("${timeout_command}" -k 1 5 docker inspect --format '{{.Id}} {{index .Config.Labels "io.codex-action.owner"}} {{.Name}}' "${container_id:-${container_name}}" 2>/dev/null); then
+    echo "::error::Could not verify execution container ownership" >&2
+    return 1
+  fi
+  read -r actual_id actual_owner actual_name <<< "$identity"
+  if [[ ! "$actual_id" =~ ^[a-f0-9]{64}$ || "$actual_owner" != "$container_name" || "$actual_name" != "/$container_name" || ( -n "${container_id:-}" && "$actual_id" != "$container_id" ) ]]; then
+    echo "::error::Execution container ownership mismatch" >&2
+    return 1
+  fi
+  container_id=$actual_id
+}
+
+remove_execution_container() {
+  [[ -n "${container_name:-}" ]] || return 0
+  # Recover an interrupted create only through the exact name plus owner label.
+  verify_execution_container || return 1
+  if ! "${timeout_command}" -k 1 5 docker rm --force "$container_id" >/dev/null 2>&1; then
+    echo "::error::Could not remove owned execution container" >&2
+    return 1
+  fi
+  container_name=""
+  container_id=""
+}
 
 # Cross-platform base64 decode (GNU uses -d, macOS uses -D)
 b64decode() {
@@ -32,7 +77,13 @@ b64decode() {
 # The timeout command is selected before runtime setup.
 run_with_timeout() {
   local seconds="$1"; shift
-  "${timeout_command}" "${seconds}" "$@"
+  local exit_code=0
+  "${timeout_command}" -k 1 "${seconds}" "$@" <&0 &
+  timer_pid=$!
+  wait "$timer_pid" || exit_code=$?
+  timer_pid=""
+  remove_execution_container || return 1
+  return "$exit_code"
 }
 
 # --- Read inputs ---
@@ -170,7 +221,11 @@ output_file="${output_dir}/result.txt"
 gitconfig_file="${runtime_home}/.gitconfig"
 printf '[safe]\n\tdirectory = *\n' > "${gitconfig_file}"
 
-cmd=(docker run --rm -i
+container_name="codex-action-${runtime_home##*/}-$$"
+cmd=(docker create -i
+  --name "$container_name"
+  --label "io.codex-action.owner=$container_name"
+  --cidfile "$runtime_home/container.id"
   --user "${container_user}"
   -e HOME=/home/codex
   -e CODEX_HOME=/home/codex/.codex
@@ -206,13 +261,18 @@ fi
 [[ -n "${model}" ]] && cmd+=(--model "${model}")
 [[ -n "${reasoning_effort}" ]] && cmd+=(-c "model_reasoning_effort=\"${reasoning_effort}\"")
 
+"${cmd[@]}" - >/dev/null || die "Could not create execution container"
+container_id=$(cat "$runtime_home/container.id")
+verify_execution_container || exit 1
+cmd=(docker start --attach --interactive "$container_id")
+
 # Pipe prompt via stdin ("-" reads prompt from stdin).
 # In quiet mode, stdout (JSONL events) is discarded and stderr is captured to a
 # temp file so that critical errors (quota exceeded, auth failures, etc.) can be
 # surfaced even when verbose logging is off.
 if [[ "${quiet}" == "true" ]]; then
   stderr_log=$(mktemp)
-  if ! run_with_timeout "${timeout_seconds}" "${cmd[@]}" - < "${prompt_file}" >/dev/null 2>"${stderr_log}"; then
+  if ! run_with_timeout "${timeout_seconds}" "${cmd[@]}" < "${prompt_file}" >/dev/null 2>"${stderr_log}"; then
     # Surface the last few lines of stderr so users can diagnose the failure
     if [[ -s "${stderr_log}" ]]; then
       echo "::group::Codex stderr output"
@@ -225,7 +285,7 @@ if [[ "${quiet}" == "true" ]]; then
   fi
   rm -f "${stderr_log}" 2>/dev/null || true
 else
-  if ! run_with_timeout "${timeout_seconds}" "${cmd[@]}" - < "${prompt_file}"; then
+  if ! run_with_timeout "${timeout_seconds}" "${cmd[@]}" < "${prompt_file}"; then
     echo "::error::Codex execution failed (image: ${image})"
     exit 1
   fi

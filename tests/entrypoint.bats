@@ -140,6 +140,53 @@ assert_invalid_timeout() {
   [ "$(cat "$TIMEOUT_CALLS")" = 'gtimeout 300' ]
 }
 
+@test "owned timeout: creates before start and removes exact verified container on success" {
+  run bash entrypoint.sh
+  [ "$status" -eq 0 ]
+  [[ "$(docker_call 1)" == create\ * ]]
+  [[ "$(docker_call 1)" == *"--cidfile "* ]]
+  [[ "$(docker_call 1)" == *"--label io.codex-action.owner="* ]]
+  grep -q '^start --attach --interactive aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$' "$DOCKER_LIFECYCLE"
+  grep -q '^rm --force aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$' "$DOCKER_LIFECYCLE"
+  [ ! -e "$BATS_TEST_TMPDIR/container_present" ]
+}
+
+@test "owned timeout: removes verified container after client timeout" {
+  set_docker_exit_codes 0 124
+  run bash entrypoint.sh
+  [ "$status" -eq 1 ]
+  grep -q '^rm --force aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$' "$DOCKER_LIFECYCLE"
+  [ ! -e "$BATS_TEST_TMPDIR/container_present" ]
+}
+
+@test "owned timeout: refuses to start or remove a container with a different owner" {
+  export DOCKER_MOCK_OWNER_OVERRIDE=foreign-owner
+  run bash entrypoint.sh
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ownership"* ]]
+  ! grep -q '^start\|^rm ' "$DOCKER_LIFECYCLE"
+}
+
+@test "owned timeout: reports removal failure instead of a successful result" {
+  export DOCKER_MOCK_REMOVE_FAILURE=true
+  run bash entrypoint.sh
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"remove"* ]]
+  [ -e "$BATS_TEST_TMPDIR/container_present" ]
+  local private_config
+  private_config=$(cat "$BATS_TEST_TMPDIR/docker_gitconfig_path_1")
+  [ -f "$private_config" ]
+  [ "$(stat -c %a "$private_config" 2>/dev/null || stat -f %Lp "$private_config")" = 600 ]
+}
+
+@test "owned timeout: failed ownership inspection never starts or removes a container" {
+  export DOCKER_MOCK_INSPECT_FAILURE=true
+  run bash entrypoint.sh
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Could not verify execution container ownership"* ]]
+  ! grep -q '^start\|^rm ' "$DOCKER_LIFECYCLE"
+}
+
 @test "api key auth: runs codex-bootstrap then exec" {
   run bash entrypoint.sh
   [ "$status" -eq 0 ]

@@ -153,7 +153,7 @@ You can pass a base64-encoded `config.toml` to customize Codex behavior (model d
 | `network_access` | No | `false` | Allow Codex to make network requests (`curl`, `wget`, etc.) during execution. When `false`, a prompt-level policy instructs the model not to use networking tools. |
 | `sandbox` | No | `full-auto` | Sandbox mode for Codex execution. `full-auto` selects the `workspace-write` sandbox (default). `danger-full-access` explicitly disables the sandbox. Approval behavior remains controlled by Codex and your configuration. |
 | `quiet` | No | `true` | Suppress verbose Codex output (tool calls, grep results, file reads) from workflow logs. Prevents source code leakage in CI logs. Set to `false` for debugging. |
-| `timeout` | No | `300` | Positive integer timeout in seconds for Codex execution. Requires `timeout` or `gtimeout` on the runner. |
+| `timeout` | No | `300` | Positive integer execution timeout in seconds, followed by up to one second of client termination grace and owned-container cleanup. Requires `timeout` or `gtimeout` on the runner. |
 
 ---
 
@@ -623,6 +623,8 @@ jobs:
 with:
   timeout: "600"
 ```
+
+The timer starts after the execution container is created; image setup and authentication are outside this interval. On an execution timeout, interruption of the attached client, or action `INT`/`TERM` during execution, the action verifies its container's immutable ID, name and owner label, then forcibly removes that container before deleting its private runtime files. Other containers are left untouched. Docker ownership checks and removal calls each have a five-second timeout plus one second of termination grace. If Docker cleanup cannot be confirmed, the action fails explicitly and retains the private runtime files for recovery. An uncatchable `SIGKILL` or an unavailable Docker daemon can prevent cleanup.
 
 ---
 
