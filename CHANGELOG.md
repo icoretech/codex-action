@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.53](https://github.com/icoretech/codex-action/compare/v0.9.52...v0.9.53) (2026-10-10)
+
+
+### Bug Fixes
+
+* **action:** remove owned execution containers after timeout ([8e23cde](https://github.com/icoretech/codex-action/commit/8e23cdeb0505b0a3c81e4d1b5f3353b5d23241bb))
+* **action:** require a valid timeout and installed timer ([502e9f2](https://github.com/icoretech/codex-action/commit/502e9f24b31a2de7d357dc5b557b0fb95c8f372d))
+* **action:** select sandbox with supported Codex exec flags ([4c192ab](https://github.com/icoretech/codex-action/commit/4c192ab6cbcc4391c8934cbc5ae4f347cc1a7874))
+* **action:** store Git config in the private runtime home ([2df185f](https://github.com/icoretech/codex-action/commit/2df185f3763e1feca135f758f364cda42a733e1d))
+* **auth:** keep action credentials private under runner ownership ([05708c0](https://github.com/icoretech/codex-action/commit/05708c0c09db3d4c9e83cb58553359b5e9ca2b52))
+
 ## [0.9.52](https://github.com/icoretech/codex-action/compare/v0.9.51...v0.9.52) (2026-10-09)
 
 
