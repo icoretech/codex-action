@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.58](https://github.com/icoretech/codex-action/compare/v0.9.57...v0.9.58) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update Codex image defaults to 0.166.0 ([84037cb](https://github.com/icoretech/codex-action/commit/84037cb0c2d634e02e0c297074b5819bbfcaec61))
+
 ## [0.9.57](https://github.com/icoretech/codex-action/compare/v0.9.56...v0.9.57) (2026-10-28)
 
 
