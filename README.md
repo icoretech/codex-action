@@ -51,7 +51,7 @@ Authenticate via device auth and store the resulting `auth.json` as a secret. Th
 1. Pull the codex-docker image:
 
    ```bash
-   docker pull ghcr.io/icoretech/codex-docker:0.167.0
+   docker pull ghcr.io/icoretech/codex-docker:0.167.1
    ```
 
 2. Run the device auth flow (the `codex-bootstrap` helper forces file-based credential storage, which is required for CI):
@@ -60,7 +60,7 @@ Authenticate via device auth and store the resulting `auth.json` as a secret. Th
    mkdir -p .codex
    docker run --rm -it \
      -v "$PWD/.codex:/home/codex/.codex" \
-     ghcr.io/icoretech/codex-docker:0.167.0 \
+     ghcr.io/icoretech/codex-docker:0.167.1 \
      codex-bootstrap device-auth
    ```
 
@@ -147,7 +147,7 @@ You can pass a base64-encoded `config.toml` to customize Codex behavior (model d
 | `openai_api_key` | No | `""` | OpenAI API key. Mutually exclusive with `codex_config`. |
 | `codex_config` | No | `""` | Base64-encoded `auth.json` from a prior device-auth session. Mutually exclusive with `openai_api_key`. |
 | `codex_config_toml` | No | `""` | Base64-encoded `config.toml` with Codex preferences (model, personality, etc.). Works with either auth method. |
-| `image_version` | No | `0.167.0` | codex-docker image version tag used for the container. |
+| `image_version` | No | `0.167.1` | codex-docker image version tag used for the container. |
 | `model` | No | `""` | Model override passed to `codex exec --model`. When omitted, the model configured in your Codex config is used. |
 | `reasoning_effort` | No | `""` | Reasoning effort level (`minimal`, `low`, `medium`, `high`, `xhigh`). Passed as `model_reasoning_effort` config override. |
 | `network_access` | No | `false` | Allow Codex to make network requests (`curl`, `wget`, etc.) during execution. When `false`, a prompt-level policy instructs the model not to use networking tools. |
@@ -687,3 +687,14 @@ This repository uses [release-please](https://github.com/googleapis/release-plea
 2. The `update-major-tag` job force-updates the corresponding major tag (e.g., `v0`) to point at the new release.
 
 Users pinning to a major tag (e.g., `uses: icoretech/codex-action@v0`) always receive the latest patch and minor releases within that major automatically.
+
+### Updating the Codex image
+
+Publish and verify the matching `codex-docker` image before updating this action.
+The Docker repository's normal `main` push workflow publishes the exact Codex
+version and `latest` for both `linux/amd64` and `linux/arm64` when its
+`CODEX_RELEASE_TAG` changes. Wait for that workflow to succeed and inspect both
+platforms in the GHCR version tag, then update `action.yml`, the `entrypoint.sh`
+fallback, and the image references in this README together. Run Bats and
+ShellCheck before pushing the action update; let release-please publish the
+action release and refresh its major tag.
