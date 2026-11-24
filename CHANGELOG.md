@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.64](https://github.com/icoretech/codex-action/compare/v0.9.63...v0.9.64) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** update codex-docker image to v0.172.0 ([23e8d59](https://github.com/icoretech/codex-action/commit/23e8d591f06d65543163ee5f86ea44e146908c21))
+
 ## [0.9.63](https://github.com/icoretech/codex-action/compare/v0.9.62...v0.9.63) (2026-11-20)
 
 
